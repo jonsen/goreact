@@ -36,7 +36,7 @@ module.exports = (env = {}) => {
       proxy: { // 联调中跨域问题解决,接口语法和Nginx基本一致。
         '/api/*': {
             changeOrigin: true,
-            target: 'http://localhost:8800/api/',
+            target: 'http://localhost:8800',
             secure: false,
         },
       }
