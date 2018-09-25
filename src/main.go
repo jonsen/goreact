@@ -3,12 +3,20 @@ package main
 import (
 	"fmt"
 	"github.com/forease/ebase"
+	"github.com/gbrlsnchs/jwt"
 	"github.com/jonsen/apilib/server"
 	"os"
 	"regexp"
+	"time"
 )
 
 var routeReg = regexp.MustCompile(`/api/*|/static/*|/ui/*`)
+
+type Token struct {
+	*jwt.JWT
+	IsLoggedIn  bool   `json:"isLoggedIn"`
+	CustomField string `json:"customField,omitempty"`
+}
 
 func reactIndex(c *server.Context) {
 	// 处理404时，如果请求的是 /api/ 和 /ui/ 路径，则报404错误
@@ -19,6 +27,63 @@ func reactIndex(c *server.Context) {
 	}
 
 	c.StaticFile(200, "./ui/build/index.html")
+}
+
+func login(c *server.Context) {
+	var body map[string]interface{}
+	req, err := c.Request(&body)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	if body["username"] == "testUser" && body["password"] == "123456" {
+
+		// Timestamp the beginning.
+		now := time.Now()
+		// Define a signer.
+		hs256 := jwt.NewHS256("secret")
+		jot := &Token{
+			JWT: &jwt.JWT{
+				Issuer:         "gbrlsnchs",
+				Subject:        "someone",
+				Audience:       "gophers",
+				ExpirationTime: now.Add(24 * 30 * 12 * time.Hour).Unix(),
+				NotBefore:      now.Add(30 * time.Minute).Unix(),
+				IssuedAt:       now.Unix(),
+				ID:             "foobar",
+			},
+			IsLoggedIn:  true,
+			CustomField: "myCustomField",
+		}
+		jot.SetAlgorithm(hs256)
+		jot.SetKeyID("kid")
+		payload, err := jwt.Marshal(jot)
+		if err != nil {
+			// handle error
+			ebase.Log.Errorf("jwt.Marshal error %s", err)
+		}
+		token, err := hs256.Sign(payload)
+		if err != nil {
+			// handle error
+
+			ebase.Log.Errorf("hs256.Sign error %s", err)
+		}
+		ebase.Log.Tracef("login authorized. token = %s", token)
+
+		c.Response(200, string(token), "ok")
+
+	} else {
+		c.Text(401, "Unauthorized")
+		ebase.Log.Info("Unauthorized")
+	}
+
+}
+
+func logout(c *server.Context) {
+
+	ebase.Log.Info("logout done.")
+	//http.Redirect(w, r, "/login", 302)
 }
 
 //openssl req -new -nodes -x509 -out server.pem -keyout server.key -days 3650 -subj "/C=CN/ST=GD/L=Earth/O=forease.net/OU=IT/CN=www.forease.net/emailAddress=im16hot@gmail.com"
@@ -44,6 +109,9 @@ func main() {
 
 		c.Response(200, req, "ok")
 	})
+
+	app.Post("/api/login", login)
+	app.Post("/api/logout", logout)
 
 	app.NotFound(reactIndex)
 

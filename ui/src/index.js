@@ -3,7 +3,18 @@ import ReactDOM from 'react-dom';
 import './index.css';
 import App from './App';
 import registerServiceWorker from './registerServiceWorker';
-import 'bootstrap/dist/css/bootstrap.min.css';
+import { Swith, Route, BrowserRouter as Router } from 'react-router-dom';
 
-ReactDOM.render(<App />, document.getElementById('root'));
+// Our Components
+import Login from './components/Login';
+
+ReactDOM.render(
+    <Router>
+        <div>
+            <Route exact path="/" component={App} />
+            <Route exact path="/login" component={Login} />
+        </div>
+    </Router>
+    , document.getElementById('root')
+);
 registerServiceWorker();

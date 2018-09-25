@@ -24,6 +24,7 @@ module.exports = (env = {}) => {
       publicPath: '/ui/',
       filename: '[name].bundle.js'
     },
+    mode: 'development',
     // watch: true,
     devtool: env.prod ? 'source-map' : 'cheap-module-eval-source-map',
     devServer: {
